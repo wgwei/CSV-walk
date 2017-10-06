@@ -27,9 +27,12 @@ class ScanCalculationFolders():
         hJobFolders = os.listdir(self.kJobs)
         jobPaths = []
         for hj in hJobFolders:
-            jobFolders = os.listdir(os.path.join(self.kJobs,hj))
-            for job in jobFolders:
-                jobPaths.append(os.path.join(self.kJobs,hj,job))
+            try:
+                jobFolders = os.listdir(os.path.join(self.kJobs,hj))
+                for job in jobFolders:
+                    jobPaths.append(os.path.join(self.kJobs,hj,job))
+            except:
+                print("Skip this folder!")
         return jobPaths
                 
     def _find_soundTest_jobs(self):
@@ -78,20 +81,23 @@ class ExtractTestsFromXlsx(ScanCalculationFolders):
         for ff in file_full:
             pt,fil = os.path.split(ff)
             print("   ", fil)
-            wb = load_workbook(ff, read_only=True)
             try:
-                ws = wb['Data']
-                impactTestFound = self._exclude_impact_tests(ws['B32'].value)
-                if impactTestFound==0:
-                    partition = self._determine_wall_floor(ff, ws)
-                    if partition == "Wall":
-                        files2process_full_walls.append(ff)
-                    elif partition == "Floor":
-                        files2process_full_floors.append(ff)
-                    else:
-                        print('Partition not identified !')
+                wb = load_workbook(ff, read_only=True)
+                try:
+                    ws = wb['Data']
+                    impactTestFound = self._exclude_impact_tests(ws['B32'].value)
+                    if impactTestFound==0:
+                        partition = self._determine_wall_floor(ff, ws)
+                        if partition == "Wall":
+                            files2process_full_walls.append(ff)
+                        elif partition == "Floor":
+                            files2process_full_floors.append(ff)
+                        else:
+                            print('Partition not identified !')
+                except:
+                    print("  Not sound test")
             except:
-                print("  Not sound test")
+                print("  Cannot open this file")
         return files2process_full_walls, files2process_full_floors
             
     def _test_xls_file(self, file_full):
@@ -102,20 +108,23 @@ class ExtractTestsFromXlsx(ScanCalculationFolders):
         print("processing ", path)
         for ff in file_full:
             print("   ", ff)
-            wb = xlrd.open_workbook(ff)
             try:
-                ws = wb.sheet_by_name('Data')
-                impactTestFound = self._exclude_impact_tests(ws.cell(31,1).value)
-                if impactTestFound==0:
-                    partition = self._determine_wall_floor(ff, ws)
-                    if partition == "Wall":
-                        files2process_full_walls.append(ff)
-                    elif partition == "Floor":
-                        files2process_full_floors.append(ff)
-                    else:
-                        print('Partition not identified !')
+                wb = xlrd.open_workbook(ff)
+                try:
+                    ws = wb.sheet_by_name('Data')
+                    impactTestFound = self._exclude_impact_tests(ws.cell(31,1).value)
+                    if impactTestFound==0:
+                        partition = self._determine_wall_floor(ff, ws)
+                        if partition == "Wall":
+                            files2process_full_walls.append(ff)
+                        elif partition == "Floor":
+                            files2process_full_floors.append(ff)
+                        else:
+                            print('Partition not identified !')
+                except:
+                    print("  Not sound test")
             except:
-                print("  Not sound test")
+                print("  Cannot open this file")
         return files2process_full_walls, files2process_full_floors
         
             
@@ -242,8 +251,11 @@ class ExtractTestsFromXlsx(ScanCalculationFolders):
                 
             
 def run_scan():
-    ex = ExtractTestsFromXlsx(r"N:\Staff\Weigang\scripts\extract-measurements\4000 - 4999")
-    ex._run_the_scan()
+    drives = [  "N:\\5000 - 5999", \
+                "N:\\6000 - 6999"]
+    for dr in drives:
+        ex = ExtractTestsFromXlsx(dr)
+        ex._run_the_scan()
     
     
 if __name__=="__main__":
